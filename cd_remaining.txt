@@ -1,0 +1,379 @@
+7.
+Generate 3-tuple intermediate code for given infix expression
+
+soln:
+#include <stdio.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <string.h>
+
+#define MAX 100
+
+// Stack structure for operators
+char operatorStack[MAX];
+int topOperator = -1;
+
+// Stack structure for operands
+char *operandStack[MAX];
+int topOperand = -1;
+
+// Function to push an operator onto the operator stack
+void pushOperator(char op) {
+    operatorStack[++topOperator] = op;
+}
+
+// Function to pop an operator from the operator stack
+char popOperator() {
+    return operatorStack[topOperator--];
+}
+
+// Function to push an operand onto the operand stack
+void pushOperand(char *operand) {
+    operandStack[++topOperand] = strdup(operand);
+}
+
+// Function to pop an operand from the operand stack
+char* popOperand() {
+    return operandStack[topOperand--];
+}
+
+// Function to check precedence of operators
+int precedence(char op) {
+    switch (op) {
+        case '+':
+        case '-':
+            return 1;
+        case '*':
+        case '/':
+            return 2;
+        default:
+            return 0;
+    }
+}
+
+// Function to convert infix expression to postfix
+void infixToPostfix(char *infix, char postfix[][MAX], int *postfixIndex) {
+    char *token = strtok(infix, " ");
+    
+    while (token != NULL) {
+        if (isalnum(token[0])) { // Operand
+            strcpy(postfix[(*postfixIndex)++], token);
+        } else if (token[0] == '(') {
+            pushOperator(token[0]);
+        } else if (token[0] == ')') {
+            while (topOperator != -1 && operatorStack[topOperator] != '(') {
+                char op[2] = {popOperator(), '\0'};
+                strcpy(postfix[(*postfixIndex)++], op);
+            }
+            popOperator(); // Remove '('
+        } else { // Operator
+            while (topOperator != -1 && precedence(operatorStack[topOperator]) >= precedence(token[0])) {
+                char op[2] = {popOperator(), '\0'};
+                strcpy(postfix[(*postfixIndex)++], op);
+            }
+            pushOperator(token[0]);
+        }
+        token = strtok(NULL, " ");
+    }
+
+    while (topOperator != -1) {
+        char op[2] = {popOperator(), '\0'};
+        strcpy(postfix[(*postfixIndex)++], op);
+    }
+}
+
+// Function to generate 3-tuples from postfix expression
+void generateTuples(char postfix[][MAX], int postfixIndex) {
+    char temp[10];
+    int tupleCount = 1;
+
+    printf("3-Tuple Intermediate Code:\n");
+    for (int i = 0; i < postfixIndex; i++) {
+        if (isalnum(postfix[i][0])) {
+            pushOperand(postfix[i]);
+        } else {
+            char *op1 = popOperand();
+            char *op2 = popOperand();
+            sprintf(temp, "t%d", tupleCount++);
+            printf("(%s, %s, %s)\n", postfix[i], op2, op1);
+            pushOperand(temp);
+        }
+    }
+}
+
+int main() {
+    char infix[MAX];
+    char postfix[MAX][MAX];
+    int postfixIndex = 0;
+
+    printf("Enter infix expression (space separated): ");
+    fgets(infix, MAX, stdin);
+    infix[strcspn(infix, "\n")] = 0; // Remove newline character
+
+    infixToPostfix(infix, postfix, &postfixIndex);
+    generateTuples(postfix, postfixIndex);
+
+    return 0;
+}
+
+-------------------------------------------------------------------
+8. 
+Extract Predecessor and Successor from given Control Flow Graph 
+
+soln:
+#include <stdio.h>
+#include <stdlib.h>
+
+#define MAX_NODES 100
+
+typedef struct Node {
+    int id;
+    struct Node* next;
+} Node;
+
+typedef struct Graph {
+    int numNodes;
+    Node* adjList[MAX_NODES];
+} Graph;
+
+// Function to create a new graph
+Graph* createGraph(int nodes) {
+    Graph* graph = (Graph*)malloc(sizeof(Graph));
+    graph->numNodes = nodes;
+    for (int i = 0; i < nodes; i++) {
+        graph->adjList[i] = NULL;
+    }
+    return graph;
+}
+
+// Function to add an edge to the graph
+void addEdge(Graph* graph, int src, int dest) {
+    Node* newNode = (Node*)malloc(sizeof(Node));
+    newNode->id = dest;
+    newNode->next = graph->adjList[src];
+    graph->adjList[src] = newNode;
+}
+
+// Function to display successors
+void displaySuccessors(Graph* graph) {
+    printf("Successors:\n");
+    for (int i = 0; i < graph->numNodes; i++) {
+        printf("Node %d: ", i);
+        Node* temp = graph->adjList[i];
+        while (temp) {
+            printf("%d ", temp->id);
+            temp = temp->next;
+        }
+        printf("\n");
+    }
+}
+
+// Function to extract predecessors
+void displayPredecessors(Graph* graph) {
+    printf("Predecessors:\n");
+    Node* predecessorList[MAX_NODES] = { NULL };
+
+    // Initialize predecessor lists
+    for (int i = 0; i < graph->numNodes; i++) {
+        predecessorList[i] = NULL;
+    }
+
+    // Build the predecessor lists
+    for (int i = 0; i < graph->numNodes; i++) {
+        Node* temp = graph->adjList[i];
+        while (temp) {
+            // Create a new node for the predecessor
+            Node* newNode = (Node*)malloc(sizeof(Node));
+            newNode->id = i;
+            newNode->next = predecessorList[temp->id];
+            predecessorList[temp->id] = newNode;
+            temp = temp->next;
+        }
+    }
+
+    // Display predecessors
+    for (int i = 0; i < graph->numNodes; i++) {
+        printf("Node %d: ", i);
+        Node* temp = predecessorList[i];
+        while (temp) {
+            printf("%d ", temp->id);
+            temp = temp->next;
+        }
+        printf("\n");
+    }
+
+    // Freeing memory for predecessor lists
+    for (int i = 0; i < graph->numNodes; i++) {
+        Node* temp = predecessorList[i];
+        while (temp) {
+            Node* toFree = temp;
+            temp = temp->next;
+            free(toFree);
+        }
+    }
+}
+
+// Main function
+int main() {
+    int nodes, edges, src, dest;
+
+    printf("Enter number of nodes: ");
+    scanf("%d", &nodes);
+    Graph* graph = createGraph(nodes);
+
+    printf("Enter number of edges: ");
+    scanf("%d", &edges);
+    for (int i = 0; i < edges; i++) {
+        printf("Enter edge (src dest): ");
+        scanf("%d %d", &src, &dest);
+        addEdge(graph, src, dest);
+    }
+
+    displaySuccessors(graph);
+    displayPredecessors(graph);
+
+    // Freeing the graph memory
+    for (int i = 0; i < nodes; i++) {
+        Node* temp = graph->adjList[i];
+        while (temp) {
+            Node* toFree = temp;
+            temp = temp->next;
+            free(toFree);
+        }
+    }
+    free(graph);
+
+    return 0;
+}
+
+
+-----------------------------------------------------------
+12.
+Implement a C program to implement LALR parsing.
+
+soln:
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define MAX_STATES 100
+#define MAX_SYMBOLS 50
+#define MAX_RULES 50
+#define MAX_STACK 100
+
+typedef struct {
+    int lhs;
+    int rhs[MAX_SYMBOLS];
+    int rhs_len;
+} Rule;
+
+typedef struct {
+    int action[MAX_SYMBOLS];
+    int goto_table[MAX_SYMBOLS];
+} State;
+
+Rule grammar[MAX_RULES];
+State parse_table[MAX_STATES];
+int num_rules, num_states, num_symbols;
+
+// Stack for parser
+int stack[MAX_STACK];
+int top = -1;
+
+// Function to push to stack
+void push(int state) {
+    stack[++top] = state;
+}
+
+// Function to pop from stack
+int pop() {
+    return stack[top--];
+}
+
+// Function to get the top of the stack
+int peek() {
+    return stack[top];
+}
+
+// Function to check if the input string is accepted
+void parse(char *input) {
+    push(0); // Start with state 0
+    char *token = strtok(input, " ");
+    
+    while (token != NULL) {
+        int state = peek();
+        int symbol = atoi(token); // Convert token to int
+        
+        // Perform action based on parse table
+        if (parse_table[state].action[symbol] > 0) {
+            printf("Shift: %d\n", symbol);
+            push(parse_table[state].action[symbol]);
+            token = strtok(NULL, " ");
+        } else if (parse_table[state].action[symbol] < 0) {
+            int rule_index = -parse_table[state].action[symbol] - 1;
+            printf("Reduce by rule: %d -> ", grammar[rule_index].lhs);
+            for (int i = 0; i < grammar[rule_index].rhs_len; i++) {
+                printf("%d ", grammar[rule_index].rhs[i]);
+            }
+            printf("\n");
+
+            // Pop the stack for the length of the RHS
+            for (int i = 0; i < grammar[rule_index].rhs_len; i++) {
+                pop();
+            }
+
+            // Go to the next state
+            state = peek();
+            push(parse_table[state].goto_table[grammar[rule_index].lhs]);
+        } else {
+            printf("Syntax error!\n");
+            return;
+        }
+    }
+
+    // Check for acceptance
+    if (peek() == 1) {
+        printf("Input accepted!\n");
+    } else {
+        printf("Input rejected!\n");
+    }
+}
+
+// Function to initialize grammar and parse table
+void init() {
+    // Example grammar: S -> A, A -> aA | b
+    num_rules = 2;
+    grammar[0] = (Rule){0, {1}, 1}; // S -> A
+    grammar[1] = (Rule){1, {2, 1}, 2}; // A -> aA
+    grammar[2] = (Rule){1, {3}, 1}; // A -> b
+
+    // Example parse table
+    num_states = 4;
+    memset(parse_table, 0, sizeof(parse_table));
+    
+    // Filling the parse table for the example grammar
+    parse_table[0].action[2] = 1; // Shift to state 1 on 'a'
+    parse_table[0].action[3] = 2; // Shift to state 2 on 'b'
+    
+    parse_table[1].action[1] = -1; // Reduce by rule A -> aA
+    parse_table[1].goto_table[0] = 3; // Go to state 3 on S
+    
+    parse_table[2].action[1] = -2; // Reduce by rule A -> b
+    parse_table[2].goto_table[0] = 3; // Go to state 3 on S
+    
+    parse_table[3].action[1] = 0; // Accept
+}
+
+int main() {
+    init();
+    char input[100];
+
+    printf("Enter input string (space separated integers for symbols, e.g., '2 3'): ");
+    fgets(input, sizeof(input), stdin);
+    
+    // Remove trailing newline
+    input[strcspn(input, "\n")] = 0;
+
+    parse(input);
+    return 0;
+}
