@@ -1,0 +1,99 @@
+//Pr10 Finding “Follow”
+
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+#define MAX_PRODUCTIONS 10
+#define MAX_LENGTH 10
+
+int n; // Number of productions
+char productions[MAX_PRODUCTIONS][MAX_LENGTH];
+char followSet[MAX_LENGTH][MAX_LENGTH]; // 2D array to store follow sets for each non-terminal
+
+void follow(char c);
+void first(char c, int idx);
+
+int main() {
+    int z;
+    char c, ch;
+
+    printf("Enter the number of productions: ");
+    scanf("%d", &n);
+    printf("Enter the productions (epsilon=$):\n");
+
+    for (int i = 0; i < n; i++) {
+        scanf("%s%c", productions[i], &ch);
+    }
+
+    do {
+        printf("Enter the element whose FOLLOW set is to be found: ");
+        scanf(" %c", &c); // Notice the space before %c to consume any newline
+
+        // Reset followSet before calculation
+        for (int i = 0; i < MAX_LENGTH; i++) {
+            followSet[i][0] = '\0';
+        }
+
+        follow(c);
+
+        printf("FOLLOW(%c) = { ", c);
+        for (int i = 0; followSet[i][0] != '\0'; i++) {
+            printf("%s ", followSet[i]);
+        }
+        printf("}\n");
+
+        printf("Do you want to continue (0/1)? ");
+        scanf("%d%c", &z, &ch);
+
+    } while (z == 1);
+
+    return 0;
+}
+
+// Function to calculate the FOLLOW set of a non-terminal
+void follow(char c) {
+    // If the start symbol, add '$' to FOLLOW set
+    if (productions[0][0] == c) {
+        strcpy(followSet[m++], "$");
+    }
+
+    for (int i = 0; i < n; i++) {
+        for (int j = 2; j < strlen(productions[i]); j++) {
+            if (productions[i][j] == c) {
+                // If the next character exists in the production
+                if (productions[i][j + 1] != '\0') {
+                    first(productions[i][j + 1], i);
+                }
+                // If the next character is epsilon (empty), follow the left-hand side
+                if (productions[i][j + 1] == '\0' && c != productions[i][0]) {
+                    follow(productions[i][0]);
+                }
+            }
+        }
+    }
+}
+
+// Function to calculate the FIRST set of a non-terminal
+void first(char c, int idx) {
+    if (!isupper(c)) {
+        // If the character is a terminal, add it to FOLLOW set
+        strcpy(followSet[m++], &c);
+    }
+
+    // Search for production rules starting with character 'c'
+    for (int k = 0; k < n; k++) {
+        if (productions[k][0] == c) {
+            if (productions[k][2] == '$') {
+                // If epsilon is in the production, follow the left-hand side
+                follow(productions[k][0]);
+            } else if (islower(productions[k][2])) {
+                // If the next character is a terminal, add it to FOLLOW set
+                strcpy(followSet[m++], &productions[k][2]);
+            } else {
+                // Otherwise, recursively call first for the next non-terminal
+                first(productions[k][2], k);
+            }
+        }
+    }
+}

@@ -1,0 +1,245 @@
+//Pr12 implement LALR parsing.
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+// Function Prototypes
+void push(char *, int *, char);
+char stackTop(char *);
+void processProduct(char, char);
+int isTerminal(char);
+int isNonTerminal(char);
+int isState(char);
+void handleError();
+void processReduction(char, char);
+char pop(char *, int *);
+void printStackAndInput(char *, int *, char[], int);
+void printState(char[], int);
+
+// Structures for Action and Goto tables
+struct action {
+    char row[6][5];
+};
+
+struct gotoTable {
+    char r[3][4];
+};
+
+// Action and Goto tables
+const struct action ACTION_TABLE[12] = {
+    {"sf", "emp", "emp", "se", "emp", "emp"},
+    {"emp", "sg", "emp", "emp", "emp", "acc"},
+    {"emp", "rc", "sh", "emp", "rc", "rc"},
+    {"emp", "re", "re", "emp", "re", "re"},
+    {"sf", "emp", "emp", "se", "emp", "emp"},
+    {"emp", "rg", "rg", "emp", "rg", "rg"},
+    {"sf", "emp", "emp", "se", "emp", "emp"},
+    {"sf", "emp", "emp", "se", "emp", "emp"},
+    {"emp", "sg", "emp", "emp", "sl", "emp"},
+    {"emp", "rb", "sh", "emp", "rb", "rb"},
+    {"emp", "rb", "rd", "emp", "rd", "rd"},
+    {"emp", "rf", "rf", "emp", "rf", "rf"}
+};
+
+const struct gotoTable GOTO_TABLE[12] = {
+    {"b", "c", "d"},
+    {"emp", "emp", "emp"},
+    {"emp", "emp", "emp"},
+    {"emp", "emp", "emp"},
+    {"i", "c", "d"},
+    {"emp", "emp", "emp"},
+    {"emp", "j", "d"},
+    {"emp", "emp", "k"},
+    {"emp", "emp", "emp"},
+    {"emp", "emp", "emp"}
+};
+
+// Terminal and Non-Terminal Symbols
+char terminals[6] = {'i', '+', '*', ')', '(', '$'};
+char nonTerminals[3] = {'E', 'T', 'F'};
+char states[12] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'm', 'j', 'k', 'l'};
+char stack[100];
+int stackTopIndex = -1;
+char temp[10];
+
+// Grammar Rules
+struct grammarRule {
+    char left;
+    char right[5];
+};
+
+const struct grammarRule GRAMMAR_RULES[6] = {
+    {'E', "e+T"},
+    {'E', "T"},
+    {'T', "T*F"},
+    {'T', "F"},
+    {'F', "(E)"},
+    {'F', "i"}
+};
+
+// Push function to add an item to the stack
+void push(char *s, int *sp, char item) {
+    if (*sp == 100) {
+        printf("Stack is full\n");
+    } else {
+        *sp = *sp + 1;
+        s[*sp] = item;
+    }
+}
+
+// Get the top item of the stack
+char stackTop(char *s) {
+    return s[stackTopIndex];
+}
+
+// Determine the product action based on input and stack top
+void processProduct(char x, char p) {
+    int terminalIndex = isTerminal(x);
+    int stateIndex = isState(p);
+    strcpy(temp, ACTION_TABLE[stateIndex - 1].row[terminalIndex - 1]);
+}
+
+// Check if the character is a terminal
+int isTerminal(char x) {
+    for (int i = 0; i < 6; i++) {
+        if (x == terminals[i]) return i + 1;
+    }
+    return 0;
+}
+
+// Check if the character is a non-terminal
+int isNonTerminal(char x) {
+    for (int i = 0; i < 3; i++) {
+        if (x == nonTerminals[i]) return i + 1;
+    }
+    return 0;
+}
+
+// Check if the character is a state
+int isState(char p) {
+    for (int i = 0; i < 12; i++) {
+        if (p == states[i]) return i + 1;
+    }
+    return 0;
+}
+
+// Error handling function
+void handleError() {
+    printf("Error in the input\n");
+    exit(0);
+}
+
+// Perform reduction based on the state and non-terminal
+void processReduction(char x, char p) {
+    int stateIndex = isState(x);
+    int nonTerminalIndex = isNonTerminal(p);
+    strcpy(temp, GOTO_TABLE[stateIndex - 1].r[nonTerminalIndex - 1]);
+}
+
+// Pop function to remove and return the top item from the stack
+char pop(char *s, int *sp) {
+    if (*sp == -1) {
+        printf("Stack is empty\n");
+        return '\0';
+    }
+    return s[(*sp)--];
+}
+
+// Print the current state of the stack and input
+void printStackAndInput(char *t, int *p, char inp[], int i) {
+    printf("\n");
+    for (int r = 0; r <= *p; r++) printState(t, r);
+    printf("\t\t\t");
+    for (int r = i; inp[r] != '\0'; r++) printf("%c", inp[r]);
+}
+
+// Helper function to represent states
+void printState(char t[], int r) {
+    char c = t[r];
+    switch (c) {
+        case 'a': printf("0"); break;
+        case 'b': printf("1"); break;
+        case 'c': printf("2"); break;
+        case 'd': printf("3"); break;
+        case 'e': printf("4"); break;
+        case 'f': printf("5"); break;
+        case 'g': printf("6"); break;
+        case 'h': printf("7"); break;
+        case 'm': printf("8"); break;
+        case 'j': printf("9"); break;
+        case 'k': printf("10"); break;
+        case 'l': printf("11"); break;
+        default: printf("%c", t[r]); break;
+    }
+}
+
+// Main function
+int main() {
+    char input[80], x, p, dl[80], y, bl = 'a';
+    int i = 0, j, k, l, n, m;
+
+    printf("Enter the input: ");
+    if (scanf("%79s", input) != 1) {
+        printf("Error reading input\n");
+        return 1;
+    }
+
+    // Append termination symbol
+    int len = strlen(input);
+    input[len] = '$';
+    input[len + 1] = '\0';
+
+    // Initialize the stack
+    push(stack, &stackTopIndex, bl);
+    printf("\nStack \t\t\t Input");
+    printStackAndInput(stack, &stackTopIndex, input, i);
+
+    do {
+        x = input[i];
+        p = stackTop(stack);
+        processProduct(x, p);
+        
+        if (strcmp(temp, "emp") == 0) {
+            handleError();
+        }
+        if (strcmp(temp, "acc") == 0) {
+            break;
+        }
+        
+        // Shift action
+        if (temp[0] == 's') {
+            push(stack, &stackTopIndex, input[i]);
+            push(stack, &stackTopIndex, temp[1]);
+            i++;
+        }
+        // Reduce action
+        else if (temp[0] == 'r') {
+            j = isState(temp[1]);
+            strcpy(temp, GRAMMAR_RULES[j - 2].right);
+            dl[0] = GRAMMAR_RULES[j - 2].left;
+            dl[1] = '\0';
+            n = strlen(temp);
+            for (k = 0; k < 2 * n; k++) pop(stack, &stackTopIndex);
+            for (m = 0; dl[m] != '\0'; m++) push(stack, &stackTopIndex, dl[m]);
+            l = stackTopIndex;
+            y = stack[l - 1];
+            processReduction(y, dl[0]);
+            for (m = 0; temp[m] != '\0'; m++) push(stack, &stackTopIndex, temp[m]);
+        }
+        printStackAndInput(stack, &stackTopIndex, input, i);
+    } while (input[i] != '\0');
+
+    // Final acceptance check
+    if (strcmp(temp, "acc") == 0) {
+        printf("\nAccept the input\n");
+    } else {
+        printf("\nDo not accept the input\n");
+    }
+
+    return 0;
+}
+
+
+
+

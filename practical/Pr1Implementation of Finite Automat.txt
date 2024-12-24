@@ -1,0 +1,45 @@
+//Pr1:Implementation of Finite Automata and String Validation.
+
+#include <stdio.h>
+#include <string.h>
+
+int main() {
+    int length;
+    printf("Enter the length of the string: ");
+    scanf("%d", &length);
+
+    // Allocate space for the string, including the null terminator
+    char str[length + 1];
+
+    printf("Enter a string to be checked: ");
+    scanf("%s", str);
+
+    // Validate input length to ensure it matches the entered length
+    if (strlen(str) != length) {
+        printf("Error: The entered string does not match the specified length.\n");
+        return 1;
+    }
+
+    int containsBinary = 0;
+
+    // Check if the string contains '0' or '1'
+    for (int i = 0; str[i] != '\0'; i++) {
+        if (str[i] == '0' || str[i] == '1') {
+            containsBinary = 1;
+            break;
+        }
+    }
+
+    // Check the last two characters if the string contains binary digits
+    if (containsBinary) {
+        if (length >= 2 && str[length - 1] == '1' && str[length - 2] == '0') {
+            printf("String is accepted\n");
+        } else {
+            printf("String is not accepted\n");
+        }
+    } else {
+        printf("String is not accepted\n");
+    }
+
+    return 0;
+}

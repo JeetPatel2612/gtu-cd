@@ -1,0 +1,105 @@
+//Pr8 Extract Predecessor and Successor from given Control Flow Graph
+
+#include <stdio.h>
+#include <stdlib.h>
+
+// Definition for a binary tree node
+struct Node {
+    int key;
+    struct Node* left;
+    struct Node* right;
+};
+
+// Global pointers for predecessor and successor
+struct Node* predecessor = NULL;
+struct Node* successor = NULL;
+
+// Function to find the predecessor and successor of a given key
+void findPreSuc(struct Node* root, int key) {
+    if (root == NULL)
+        return;
+
+    // If the current node matches the key, find predecessor and successor
+    if (root->key == key) {
+        // Find the predecessor (largest node in the left subtree)
+        if (root->left != NULL) {
+            struct Node* temp = root->left;
+            while (temp->right != NULL)
+                temp = temp->right;
+            predecessor = temp;
+        }
+
+        // Find the successor (smallest node in the right subtree)
+        if (root->right != NULL) {
+            struct Node* temp = root->right;
+            while (temp->left != NULL)
+                temp = temp->left;
+            successor = temp;
+        }
+        return;
+    }
+
+    // Traverse the left subtree if the key is smaller than the current node's key
+    if (root->key > key) {
+        successor = root;
+        findPreSuc(root->left, key);
+    }
+    // Traverse the right subtree if the key is larger than the current node's key
+    else {
+        predecessor = root;
+        findPreSuc(root->right, key);
+    }
+}
+
+// Function to insert a new key into the BST
+struct Node* insert(struct Node* node, int key) {
+    // If the tree is empty, create a new node
+    if (node == NULL) {
+        struct Node* newNode = (struct Node*)malloc(sizeof(struct Node));
+        newNode->key = key;
+        newNode->left = newNode->right = NULL;
+        return newNode;
+    }
+
+    // Recursively insert the key in the left or right subtree
+    if (key < node->key)
+        node->left = insert(node->left, key);
+    else if (key > node->key)
+        node->right = insert(node->right, key);
+
+    return node;
+}
+
+int main() {
+    int key;
+    
+    // Take input from the user for the key
+    printf("Enter the key to find predecessor and successor: ");
+    scanf("%d", &key);
+
+    // Create a binary search tree and insert nodes
+    struct Node* root = NULL;
+    root = insert(root, 50);
+    insert(root, 30);
+    insert(root, 20);
+    insert(root, 40);
+    insert(root, 70);
+    insert(root, 60);
+    insert(root, 80);
+
+    // Find predecessor and successor of the given key
+    findPreSuc(root, key);
+
+    // Output the predecessor and successor if found
+    if (predecessor != NULL)
+        printf("Predecessor is %d\n", predecessor->key);
+    else
+        printf("No Predecessor\n");
+
+    if (successor != NULL)
+        printf("Successor is %d\n", successor->key);
+    else
+        printf("No Successor\n");
+
+    return 0;
+}

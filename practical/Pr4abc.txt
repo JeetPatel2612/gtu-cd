@@ -1,0 +1,125 @@
+//Pr4
+a. Convert Roman to Decimal
+
+%{
+#include <stdio.h>
+int total = 0;
+%}
+
+WS [ \t]+
+
+%%
+I   { total += 1; }
+IV  { total += 4; }
+V   { total += 5; }
+IX  { total += 9; }
+X   { total += 10; }
+XL  { total += 40; }
+L   { total += 50; }
+XC  { total += 90; }
+C   { total += 100; }
+CD  { total += 400; }
+D   { total += 500; }
+CM  { total += 900; }
+M   { total += 1000; }
+{WS} { /* Skip whitespace */ }
+\n  { return total; }
+
+%%
+
+int main(void) {
+    printf("Enter Roman Number: ");
+    int decimalValue = yylex();
+    printf("Decimal Number is: %d\n", decimalValue);
+    return 0;
+}
+
+int yywrap(void) {
+    return 1;
+}
+
+
+
+b. Check weather given statement is compound or simple
+%{
+#include <stdio.h>
+int flag = 0;
+%}
+
+%%
+// Keywords indicating a compound sentence
+and|
+or|
+but|
+because|
+if|
+then|
+nevertheless { flag = 1; }
+
+. ; // Match any other character
+\n { return 0; } // End of input
+
+%%
+
+int main() {
+    printf("Enter your sentence:\n");
+    yylex();
+    if (flag == 0) {
+        printf("Simple sentence\n");
+    } else {
+        printf("Compound sentence\n");
+    }
+    return 0;
+}
+
+int yywrap() {
+    return 1;
+}
+
+
+c. Extract html tags from .html file.
+<html>
+<head>
+</head>
+<body>
+<p>
+<a href="https://www.youtube.com/">Dhyey Chauhan</a>
+</p>
+</body>
+</html>
+
+Code:
+
+/* Declaration section*/
+%{
+#include <stdio.h>
+%}
+
+%%
+
+// Match and print anything enclosed in < >
+"<"[^>]*> { printf("%s\n", yytext); }
+
+. ; // Ignore any other character
+
+%%
+
+int yywrap() {
+    return 1;
+}
+
+int main(int argc, char *argv[]) {
+    // Open Pr4c.html in read mode
+    FILE *yyin = fopen("Pr4c.html", "r");
+    if (!yyin) {
+        perror("Error opening file");
+        return 1;
+    }
+
+    // Start lexical analysis
+    yylex();
+
+    fclose(yyin);
+    return 0;
+}
+

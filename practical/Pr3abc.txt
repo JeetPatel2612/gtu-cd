@@ -1,0 +1,102 @@
+//Pr3
+a. Generate Histogram of words
+
+%{
+#include <stdio.h>
+#include <string.h>
+int i = 0;
+%}
+
+/* Rules Section */
+%%
+[a-zA-Z0-9]+    { i++; } /* Rule for counting number of words */
+
+"\n" { printf("%d\n", i); i = 0; }
+%%
+
+int yywrap(void) {
+    return 1; /* Indicates end of input */
+}
+
+int main() {
+    // The function that starts the lexical analysis
+    yylex();
+    return 0;
+}
+
+
+b.Check Cypher
+
+%{
+#include <stdio.h>
+#include <stdlib.h>
+
+void encrypt(const char *text, int shift);
+%}
+
+%option noyywrap
+
+%%
+[a-zA-Z]+ {
+    encrypt(yytext, 3); // Shift by 3 positions for Caesar cipher
+}
+.|
+ {
+    putchar(yytext[0]);
+}
+%%
+
+void encrypt(const char *text, int shift) {
+    while (*text) {
+        char c = *text;
+        if (c >= 'a' && c <= 'z') {
+            c = 'a' + (c - 'a' + shift) % 26;
+        } else if (c >= 'A' && c <= 'Z') {
+            c = 'A' + (c - 'A' + shift) % 26;
+        }
+        putchar(c);
+        text++;
+    }
+}
+
+int main() {
+    yylex();
+    return 0;
+}
+
+
+
+c. Extract single and multiline comments from C Program
+
+%{
+#include <stdio.h>
+int sl = 0, ml = 0;
+%}
+
+%%
+// Single-line comments
+// Matches: // followed by any combination of alphanumeric characters, underscores, or spaces
+[/]{2}[a-zA-Z0-9_ ]* {
+    sl++;
+    printf("Single line comment count: %d\n", sl);
+}
+
+// Multi-line comments
+// Matches: /* followed by any combination of alphanumeric characters, underscores, or spaces, ending with */
+[/][*][a-zA-Z0-9_ ]*[*][/] {
+    ml++;
+    printf("Multiple line comment count: %d\n", ml);
+}
+
+%%
+
+int yywrap(void) {
+    return 1;
+}
+
+int main() {
+    yylex();
+    return 0;
+}
+
+

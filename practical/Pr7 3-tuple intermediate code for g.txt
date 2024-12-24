@@ -1,0 +1,72 @@
+//Pr7 3-tuple intermediate code for given infix expression.
+
+#include <stdio.h>
+#include <string.h>
+
+void process_expression(); 
+void handle_plus_minus(); 
+void handle_mul_div(); 
+
+int i, j, l; 
+char ex[20], expr[20], expr1[20], temp[5], op[5]; 
+
+void reverse_string(char *str); 
+
+int main() { 
+    printf("Enter the expression with an arithmetic operator: "); 
+    scanf("%19s", ex); // Limit input size to avoid buffer overflow
+    strcpy(expr, ex);  // Copy the expression into expr
+    l = strlen(expr);  // Get the length of the expression
+    expr1[0] = '\0';    // Initialize expr1 as an empty string
+
+    // Process the input expression based on operator precedence
+    for (i = 0; i < l; i++) { 
+        if (expr[i] == '+' || expr[i] == '-') { 
+            // If a + or - is found, handle it based on precedence
+            if (i + 2 < l && (expr[i + 2] == '*' || expr[i + 2] == '/')) { 
+                handle_mul_div(); // Handle multiplication or division first
+                break; 
+            } else { 
+                handle_plus_minus(); // Handle addition or subtraction
+                break; 
+            } 
+        } else if (expr[i] == '*' || expr[i] == '/') { 
+            handle_mul_div(); // Handle multiplication or division
+            break; 
+        } 
+    }
+
+    return 0; 
+} 
+
+// Function to handle addition or subtraction
+void handle_plus_minus() { 
+    // Extract sub-expression up to the operator and generate three-address code
+    strncpy(expr1, expr, i + 1); 
+    expr1[i + 1] = '\0';  // Null-terminate the string
+
+    printf("Three address code:\n");
+    printf("temp = %s\n", expr1);
+    printf("temp1 = temp %c %c\n", expr[i], expr[i + 1]);
+}
+
+// Function to handle multiplication or division
+void handle_mul_div() { 
+    // Extract the sub-expression and generate three-address code
+    strncpy(expr1, expr, i + 2);  // Copy the part of the expression up to the operator
+    expr1[i + 2] = '\0';  // Null-terminate the string
+
+    printf("Three address code:\n");
+    printf("temp = %s\n", expr1);
+    printf("temp1 = temp %c %c\n", expr[i], expr[i + 1]);
+}
+
+// Helper function to reverse a string
+void reverse_string(char *str) {
+    int len = strlen(str);
+    for (int i = 0; i < len / 2; i++) {
+        char temp = str[i];
+        str[i] = str[len - i - 1];
+        str[len - i - 1] = temp;
+    }
+}

@@ -1,0 +1,131 @@
+//Pr13 operator precedence parsing
+
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+// Global variables
+char *input;
+int i = 0;
+char lastHandle[6], stack[50], handles[][5] = {")E(", "E*E", "E+E", "i", "E^E"};
+int top = 0, l;
+
+// Precedence table
+char prec[9][9] = {
+    /* +   -   *   /   ^   i   (   )   $ */
+    /* + */ '>', '>', '<', '<', '<', '<', '<', '>', '>',
+    /* - */ '>', '>', '<', '<', '<', '<', '<', '>', '>',
+    /* * */ '>', '>', '>', '>', '<', '<', '<', '>', '>',
+    /* / */ '>', '>', '>', '>', '<', '<', '<', '>', '>',
+    /* ^ */ '>', '>', '>', '>', '<', '<', '<', '>', '>',
+    /* i */ '>', '>', '>', '>', '>', 'e', 'e', '>', '>',
+    /* ( */ '<', '<', '<', '<', '<', '<', '<', '>', 'e',
+    /* ) */ '>', '>', '>', '>', '>', 'e', 'e', '>', '>',
+    /* $ */ '<', '<', '<', '<', '<', '<', '<', '<', '>'
+};
+
+// Function to get the index for precedence table
+int getIndex(char c) {
+    switch (c) {
+        case '+': return 0;
+        case '-': return 1;
+        case '*': return 2;
+        case '/': return 3;
+        case '^': return 4;
+        case 'i': return 5;
+        case '(': return 6;
+        case ')': return 7;
+        case '$': return 8;
+        default: return -1;
+    }
+}
+
+// Function to shift the input symbol to the stack
+int shift() {
+    stack[++top] = *(input + i++);
+    stack[top + 1] = '\0'; // Null terminate the stack
+    return 1;
+}
+
+// Function to perform a reduction if a handle is found
+int reduce() {
+    int len, found, t;
+    for (int i = 0; i < 5; i++) { // Loop through all possible handles
+        len = strlen(handles[i]);
+        if (stack[top] == handles[i][0] && top + 1 >= len) {
+            found = 1;
+            for (t = 0; t < len; t++) {
+                if (stack[top - t] != handles[i][t]) {
+                    found = 0;
+                    break;
+                }
+            }
+            if (found == 1) {
+                stack[top - t + 1] = 'E'; // Perform reduction
+                top = top - t + 1;
+                strcpy(lastHandle, handles[i]);
+                stack[top + 1] = '\0'; // Null terminate the stack
+                return 1; // Successful reduction
+            }
+        }
+    }
+    return 0; // No reduction found
+}
+
+// Function to display the current stack
+void dispStack() {
+    for (int j = 0; j <= top; j++)
+        printf("%c", stack[j]);
+}
+
+// Function to display the remaining input
+void dispInput() {
+    for (int j = i; j < l; j++)
+        printf("%c", *(input + j));
+}
+
+int main() {
+    // Read the input string
+    input = (char*)malloc(50 * sizeof(char));
+    printf("\nEnter the string: ");
+    scanf("%s", input);
+    input = strcat(input, "$"); // Append '$' to the input for end-of-input marker
+    l = strlen(input); // Length of the input string
+
+    // Initialize the stack with '$'
+    strcpy(stack, "$");
+    printf("\nSTACK\tINPUT\tACTION\n");
+
+    // Main parsing loop
+    while (i <= l) {
+        shift(); // Shift the current input symbol to the stack
+        printf("\n");
+        dispStack();
+        printf("\t");
+        dispInput();
+        printf("\tShift");
+
+        // Check for reductions based on precedence
+        if (prec[getIndex(stack[top])][getIndex(input[i])] == '>') {
+            while (reduce()) { // Keep reducing if possible
+                printf("\n");
+                dispStack();
+                printf("\t");
+                dispInput();
+                printf("\tReduced: E -> %s", lastHandle);
+            }
+        }
+    }
+
+    // Check if the string is accepted
+    if (strcmp(stack, "$E$") == 0) {
+        printf("\nAccepted.");
+    } else {
+        printf("\nNot Accepted.");
+    }
+
+    // Free the allocated memory
+    free(input);
+
+    return 0;
+}
